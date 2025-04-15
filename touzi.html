@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信风格3D骰子</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+KuaiLe&display=swap');
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Ma Shan Zheng', cursive;
+            perspective: 1000px;
+            overflow: hidden;
+            flex-direction: column;
+        }
+        
+        .dice-container {
+            perspective: 1000px;
+            width: 180px;
+            height: 180px;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .dice {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.17, 0.84, 0.44, 1);
+            cursor: pointer;
+            transform: rotateX(-15deg) rotateY(15deg);
+        }
+        
+        .face {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.05),
+                inset 0 0 0 1px rgba(255,255,255,0.8);
+            box-sizing: border-box;
+            backface-visibility: visible;
+            filter: brightness(0.98);
+            overflow: hidden;
+        }
+        
+        /* 骰子各面的位置 */
+        .front  { transform: translateZ(90px); }
+        .back   { transform: rotateY(180deg) translateZ(90px); }
+        .right  { transform: rotateY(90deg) translateZ(90px); }
+        .left   { transform: rotateY(-90deg) translateZ(90px); }
+        .top    { transform: rotateX(90deg) translateZ(90px); }
+        .bottom { transform: rotateX(-90deg) translateZ(90px); }
+        
+        /* 骰子点数样式 */
+        .dot {
+            width: 26px;
+            height: 26px;
+            background-color: #333;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 
+                0 0 5px rgba(0,0,0,0.3),
+                inset 0 2px 2px rgba(255,255,255,0.2);
+        }
+        
+        /* 各面的点数布局 */
+        .face-1 .dot:nth-child(1) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        
+        .face-2 .dot:nth-child(1) { top: 25%; left: 25%; }
+        .face-2 .dot:nth-child(2) { bottom: 25%; right: 25%; }
+        
+        .face-3 .dot:nth-child(1) { top: 25%; left: 25%; }
+        .face-3 .dot:nth-child(2) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .face-3 .dot:nth-child(3) { bottom: 25%; right: 25%; }
+        
+        .face-4 .dot:nth-child(1) { top: 25%; left: 25%; }
+        .face-4 .dot:nth-child(2) { top: 25%; right: 25%; }
+        .face-4 .dot:nth-child(3) { bottom: 25%; left: 25%; }
+        .face-4 .dot:nth-child(4) { bottom: 25%; right: 25%; }
+        
+        .face-5 .dot:nth-child(1) { top: 25%; left: 25%; }
+        .face-5 .dot:nth-child(2) { top: 25%; right: 25%; }
+        .face-5 .dot:nth-child(3) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .face-5 .dot:nth-child(4) { bottom: 25%; left: 25%; }
+        .face-5 .dot:nth-child(5) { bottom: 25%; right: 25%; }
+        
+        .face-6 .dot:nth-child(1) { top: 25%; left: 25%; }
+        .face-6 .dot:nth-child(2) { top: 25%; right: 25%; }
+        .face-6 .dot:nth-child(3) { top: 50%; left: 25%; transform: translateY(-50%); }
+        .face-6 .dot:nth-child(4) { top: 50%; right: 25%; transform: translateY(-50%); }
+        .face-6 .dot:nth-child(5) { bottom: 25%; left: 25%; }
+        .face-6 .dot:nth-child(6) { bottom: 25%; right: 25%; }
+        
+        /* 阴影效果 - 增强 */
+        .shadow {
+            width: 190px;
+            height: 190px;
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 70%);
+            position: absolute;
+            bottom: -35px;
+            left: -5px;
+            transform: rotateX(90deg) translateZ(-110px);
+            opacity: 0.6;
+            border-radius: 50%;
+            filter: blur(5px);
+            z-index: -1;
+        }
+        
+        /* 初始提示 */
+        .initial-hint {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            color: #4a90e2;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+            font-family: 'ZCOOL KuaiLe', cursive;
+            border: 2px solid rgba(74,144,226,0.2);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        /* 警告消息 */
+        .warning-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            font-size: 24px;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            color: #ff4d4d;
+            opacity: 0;
+            transition: all 0.5s;
+            z-index: 100;
+            pointer-events: none;
+            text-align: center;
+            max-width: 80%;
+            border: 2px solid #ffebeb;
+            background: linear-gradient(135deg, #ffffff, #fff9f9);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        /* 骰子光滑效果 */
+        .face {
+            background: linear-gradient(145deg, #ffffff, #f8f8f8);
+            box-shadow: 
+                inset 4px 4px 8px rgba(255,255,255,0.8),
+                inset -4px -4px 8px rgba(0,0,0,0.1),
+                0 8px 20px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        /* 边角高光效果 */
+        .face::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            box-shadow: inset 0 0 25px rgba(255,255,255,0.6);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="dice-container">
+        <div class="dice" id="dice">
+            <!-- 骰子的6个面 -->
+            <div class="face front face-1">
+                <div class="dot"></div>
+            </div>
+            <div class="face back face-2">
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="face right face-3">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="face left face-4">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="face top face-5">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="face bottom face-6">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="shadow"></div>
+        </div>
+        
+        <!-- 初始提示 -->
+        <div class="initial-hint" id="initialHint">点我</div>
+    </div>
+
+    <!-- 警告消息 -->
+    <div class="warning-message" id="warningMessage">别玩了，老子要被你玩坏了</div>
+
+    <script>
+        const dice = document.getElementById('dice');
+        const initialHint = document.getElementById('initialHint');
+        const warningMessage = document.getElementById('warningMessage');
+        
+        let clickCount = 0;
+        let hasInteracted = false;
+        
+        // 显示前面、左面和上面的角度（上面占比更多）
+        const faces = [
+            'rotateX(-15deg) rotateY(15deg)',    // 1点
+            'rotateX(-15deg) rotateY(195deg)',   // 2点
+            'rotateX(-15deg) rotateY(105deg)',   // 3点
+            'rotateX(-15deg) rotateY(-75deg)',   // 4点
+            'rotateX(75deg) rotateY(15deg)',     // 5点
+            'rotateX(-105deg) rotateY(15deg)'    // 6点
+        ];
+        
+        // 显示初始提示
+        setTimeout(() => {
+            initialHint.style.opacity = '1';
+        }, 500);
+        
+        function rollDice() {
+            if (!hasInteracted) {
+                hasInteracted = true;
+                initialHint.style.opacity = '0';
+            }
+            
+            clickCount++;
+            
+            // 检查点击次数
+            if (clickCount >= 3) {
+                // 显示警告消息
+                warningMessage.style.opacity = '1';
+                warningMessage.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                
+                // 3秒后隐藏
+                setTimeout(() => {
+                    warningMessage.style.opacity = '0';
+                    warningMessage.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                    clickCount = 0; // 重置计数
+                }, 3000);
+                return;
+            }
+            
+            // 随机选择一个面
+            const randomFace = Math.floor(Math.random() * 6);
+            
+            // 添加随机旋转动画
+            const randomX = Math.floor(Math.random() * 720) + 360;
+            const randomY = Math.floor(Math.random() * 720) + 360;
+            
+            dice.style.transform = `rotateX(${randomX}deg) rotateY(${randomY}deg)`;
+            
+            // 短暂延迟后切换到选定的面
+            setTimeout(() => {
+                dice.style.transform = faces[randomFace];
+            }, 1000);
+        }
+        
+        dice.addEventListener('click', rollDice);
+    </script>
+</body>
+</html>
